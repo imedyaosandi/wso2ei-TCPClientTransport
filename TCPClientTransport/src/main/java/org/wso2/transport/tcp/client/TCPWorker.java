@@ -34,7 +34,7 @@ public class TCPWorker implements Runnable{
     public void run() {
         //debug log to check received messages.
         String string = new String(input);
-        log.debug("Server input string :  " + string);
+        log.info("Server input string :  " + string);
 
         MessageContext msgContext = null;
         try {

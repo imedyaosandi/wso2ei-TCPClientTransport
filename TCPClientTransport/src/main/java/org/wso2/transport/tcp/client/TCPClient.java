@@ -59,10 +59,10 @@ public class TCPClient implements Runnable {
                 if (socket == null) {
                     if (failover) {
                         socket = new Socket(endpoint.getFailoverHost(), endpoint.getFailoverPort());
-                        log.info("TCP Client Connected to the failover Server on port : " + endpoint.getFailoverPort);
+                        log.info("TCP Client Connected to the failover Server on port : " + endpoint.getFailoverPort());
                     } else {
                         socket = new Socket(endpoint.getHost(), endpoint.getPort());
-                        log.info("TCP Client Connected to the Server on port : " + endpoint.getPort);
+                        log.info("TCP Client Connected to the Server on port : " + endpoint.getPort());
                     }
                     input = socket.getInputStream();
                 }
