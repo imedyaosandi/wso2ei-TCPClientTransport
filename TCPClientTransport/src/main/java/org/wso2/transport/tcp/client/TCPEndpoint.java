@@ -37,15 +37,19 @@ public class TCPEndpoint extends ProtocolEndpoint {
     public int getPort() {
         return port;
     }
+
     public int getFailoverPort(){
         return failoverPort;
     }
+
     public String getHost() {
         return host;
     }
+
     public String getFailoverHost(){
         return failoverHost;
     }
+
     public int getBacklog() {
         return backlog;
     }
@@ -92,6 +96,11 @@ public class TCPEndpoint extends ProtocolEndpoint {
             return false;
         }
 
+        failoverPort = ParamUtils.getOptionalParamInt(params, TCPConstants.PARAM_FAILOVER_PORT, -1);
+        if (port == -1) {
+            return false;
+        }
+
         contentType = ParamUtils.getOptionalParam(params, TCPConstants.PARAM_CONTENT_TYPE);
         if (contentType == null || contentType.isEmpty()) {
             contentType = TCPConstants.TCP_DEFAULT_CONTENT_TYPE;
@@ -120,6 +129,7 @@ public class TCPEndpoint extends ProtocolEndpoint {
         clientResponseRequired =  ParamUtils.getOptionalParamBoolean(params, TCPConstants.PARAM_RESPONSE_CLIENT, false);
 
         host = ParamUtils.getOptionalParam(params, TCPConstants.PARAM_HOST);
+        failoverHost = ParamUtils.getOptionalParam(params, TCPConstants.PARAM_FAILOVER_HOST);
         backlog = ParamUtils.getOptionalParamInt(params, TCPConstants.PARAM_BACKLOG, TCPConstants.TCP_DEFAULT_BACKLOG);
         return true;
     }
