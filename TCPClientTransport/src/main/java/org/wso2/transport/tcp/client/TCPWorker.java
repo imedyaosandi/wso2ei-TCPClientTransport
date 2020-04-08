@@ -17,22 +17,22 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
-public class TCPWorker implements Runnable{
+public class TCPWorker implements Runnable {
     private static final Log log = LogFactory.getLog(TCPClient.class);
 
-    private String input;
+    private byte[] input;
     private TCPEndpoint endpoint;
     private Socket socket;
 
     public TCPWorker(byte[] data, TCPEndpoint endpoint, Socket socket) {
-        this.input=data;
-        this.endpoint=endpoint;
-        this.socket=socket;
+        this.input = data;
+        this.endpoint = endpoint;
+        this.socket = socket;
     }
 
     @Override
     public void run() {
-        //debug log to check received messages.
+        //debug log to check received messages.To enable
         String string = new String(input);
         log.info("Server input string :  " + string);
 
@@ -53,13 +53,13 @@ public class TCPWorker implements Runnable{
             outInfo.setDelimiterType(delimiterType);
             msgContext.setProperty(Constants.OUT_TRANSPORT_INFO, outInfo);
             // create the SOAP Envelope
-            handleEnvelope(msgContext,input);
+            handleEnvelope(msgContext, input);
         } catch (Exception e) {
             sendFault(msgContext, e);
         }
     }
 
-    private void handleEnvelope(MessageContext msgContext, byte [] value) throws AxisFault {
+    private void handleEnvelope(MessageContext msgContext, byte[] value) throws AxisFault {
         ByteArrayInputStream bais = null;
         try {
             bais = new ByteArrayInputStream(value);
@@ -72,7 +72,7 @@ public class TCPWorker implements Runnable{
         } catch (XMLStreamException e) {
             sendFault(msgContext, e);
         } finally {
-            if(bais != null) {
+            if (bais != null) {
                 try {
                     bais.close();
                 } catch (IOException e) {
@@ -87,7 +87,7 @@ public class TCPWorker implements Runnable{
         log.error("Error while processing TCP Client request through the Axis2 engine", fault);
         try {
             if (msgContext != null) {
-                log.info("message context   " +msgContext + " tout  "+MessageContext.TRANSPORT_OUT);
+                log.info("message context   " + msgContext + " tout  " + MessageContext.TRANSPORT_OUT);
                 msgContext.setProperty(MessageContext.TRANSPORT_OUT, input);
 
                 MessageContext faultContext =
