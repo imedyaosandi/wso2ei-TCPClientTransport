@@ -120,4 +120,5 @@ public class TCPClient implements Runnable {
                 socket = null;
             }
         }while (running && socket == null);
+    }
 }
