@@ -24,7 +24,7 @@ public class TCPWorker implements Runnable{
     private TCPEndpoint endpoint;
     private Socket socket;
 
-    public TCPWorker(String data, TCPEndpoint endpoint, Socket socket) {
+    public TCPWorker(byte[] data, TCPEndpoint endpoint, Socket socket) {
         this.input=data;
         this.endpoint=endpoint;
         this.socket=socket;
@@ -33,7 +33,8 @@ public class TCPWorker implements Runnable{
     @Override
     public void run() {
         //debug log to check received messages.
-        log.debug("Server input string :  " + input);
+        String string = new String(input);
+        log.debug("Server input string :  " + string);
 
         MessageContext msgContext = null;
         try {
@@ -52,7 +53,7 @@ public class TCPWorker implements Runnable{
             outInfo.setDelimiterType(delimiterType);
             msgContext.setProperty(Constants.OUT_TRANSPORT_INFO, outInfo);
             // create the SOAP Envelope
-            handleEnvelope(msgContext,input.getBytes());
+            handleEnvelope(msgContext,input);
         } catch (Exception e) {
             sendFault(msgContext, e);
         }
