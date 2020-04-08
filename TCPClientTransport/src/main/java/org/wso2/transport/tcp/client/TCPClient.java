@@ -15,6 +15,9 @@ public class TCPClient implements Runnable {
     private Socket socket;
     private TCPEndpoint endpoint;
     private WorkerPool workerPool;
+    private boolean running = true;
+    private InputStream input;
+    private boolean failover = false;
 
     // constructor
     public TCPClient(TCPEndpoint endpoint, WorkerPool workerPool) {
@@ -24,13 +27,24 @@ public class TCPClient implements Runnable {
     }
 
     public void connect() throws IOException {
-        Thread readThread=new Thread(this);
+        Thread readThread=new Thread(this,"tcpClientThread");
         readThread.start();
     }
 
     public void closeSocket() throws IOException {
         log.info("TCP client stopping......");
-        socket.close();
+        if (input != null) {
+            try {
+                input.close();
+            } catch (Exception e) {
+            }
+        }
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (Exception e) {
+            }
+        }
         socket = null;
         log.info("TCP client stopped");
     }
@@ -44,8 +58,7 @@ public class TCPClient implements Runnable {
                 if (socket == null) {
                     if (failover) {
                         socket = new Socket(endpoint.getFailoverHost(), endpoint.getFailoverPort());
-                        failover = false;
-                        log.info("TCP Client Connected to the failover Server on port : "+ endpoint.getFailoverPort);
+                        log.info("TCP Client Connected to the failover Server on port : " + endpoint.getFailoverPort);
                     } else {
                         socket = new Socket(endpoint.getHost(), endpoint.getPort());
                         log.info("TCP Client Connected to the Server on port : " + endpoint.getPort);
@@ -54,40 +67,30 @@ public class TCPClient implements Runnable {
                 }
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 try {
-                    int next = input.read();
-                    while (next > -1) {
-                        if ((char) next == delimiter && bos != null) {
+                    int next = -1;
+                    while ((next = input.read()) > -1) {
+                        if ((char) next == delimiter) {
                             bos.flush();
                             byte[] result = bos.toByteArray();
-                            //Process messages using Single Thread
+
+                            //Process messages using a Single Thread
                             TCPWorker worker = new TCPWorker(result, endpoint, socket);
                             worker.run();
+
                             //Process messages using Multiple Threads
-                            //workerPool.execute(new TCPWorker(s, endpoint, socket));
-                            //bos.close();
-                            bos = null;
-                            next = input.read();
-                            continue;
-                        }
-                        if (bos == null) {
-                            bos = new ByteArrayOutputStream();
-                        }
-                        if ((char) next != delimiter) {
+                            //workerPool.execute(new TCPWorker(result, endpoint, socket));
+
+                            bos.reset();
+                        } else {
                             bos.write(next);
                         }
-                        next = input.read();
-                    }
-                    if (bos != null) {
-                        byte[] result = bos.toByteArray();
-                        //Process messages using Single Thread
-                        TCPWorker worker = new TCPWorker(result, endpoint, socket);
-                        worker.run();
-                        //Process messages using Multiple Threads
-                        //workerPool.execute(new TCPWorker(s, endpoint, socket));
-                        bos.close();
                     }
                 } catch (IOException e) {
-                    log.error("Error while reading the message from the server", e);
+                    if (running) {
+                        log.error("Error while reading the message from the server", e);
+                    }
+                } catch (Exception e) {
+                    log.error("Exception occurred while processing message", e);
                 } finally {
                     try {
                         if (input != null) {
@@ -98,17 +101,22 @@ public class TCPClient implements Runnable {
                 }
             } catch (IOException e) {
                 log.error("Error while creating the socket connection", e);
-            } finally {
-                try {
-                    if (socket != null) {
-                        socket.close();
-                    }
-                } catch (IOException e) {
-                    //ignore
+                if (failover) {
+                    failover = false;
+                } else {
+                    failover = true;
                 }
-                failover = true;
+                if (socket != null) {
+                    try {
+                        socket.close();
+                    } catch (IOException ex) {
+                        //ignore
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Exception occurred while processing message", e);
+            } finally {
                 socket = null;
             }
-        } while (socket == null);
-    }
+        }while (running && socket == null);
 }
