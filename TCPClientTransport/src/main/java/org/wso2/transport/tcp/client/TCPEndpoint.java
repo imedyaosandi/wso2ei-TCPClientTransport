@@ -14,6 +14,8 @@ public class TCPEndpoint extends ProtocolEndpoint {
 
     private String host = null;
     private int port = -1;
+    private String failoverHost = null;
+    private int failoverPort = -1;
     private int backlog = TCPConstants.TCP_DEFAULT_BACKLOG;
     private String contentType;
     private String recordDelimiter;
@@ -35,11 +37,15 @@ public class TCPEndpoint extends ProtocolEndpoint {
     public int getPort() {
         return port;
     }
-
+    public int getFailoverPort(){
+        return failoverPort;
+    }
     public String getHost() {
         return host;
     }
-
+    public String getFailoverHost(){
+        return failoverHost;
+    }
     public int getBacklog() {
         return backlog;
     }

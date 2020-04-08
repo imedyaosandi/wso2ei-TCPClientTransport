@@ -30,6 +30,7 @@ public class TCPClient implements Runnable {
 
     public void closeSocket() throws IOException {
         log.info("TCP client stopping......");
+        socket.close();
         socket = null;
         log.info("TCP client stopped");
     }
@@ -37,52 +38,77 @@ public class TCPClient implements Runnable {
     @Override
     public void run() {
         Socket socket = null;
-        String del = endpoint.getRecordDelimiter();
+        char delimiter = endpoint.getRecordDelimiter().charAt(0);
         do {
             try {
                 if (socket == null) {
-                    socket = new Socket(endpoint.getHost(), endpoint.getPort());
-                    log.info("TCP Client Connected to Server");
+                    if (failover) {
+                        socket = new Socket(endpoint.getFailoverHost(), endpoint.getFailoverPort());
+                        failover = false;
+                        log.info("TCP Client Connected to the failover Server on port : "+ endpoint.getFailoverPort);
+                    } else {
+                        socket = new Socket(endpoint.getHost(), endpoint.getPort());
+                        log.info("TCP Client Connected to the Server on port : " + endpoint.getPort);
+                    }
+                    input = socket.getInputStream();
                 }
-                DataInputStream input = new DataInputStream(socket.getInputStream());
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 try {
                     int next = input.read();
                     while (next > -1) {
-                        bos.write(next);
-                        next = input.read();
-                        if (input.available() <= 0) {
-                            if (next > -1) {
-                                bos.write(next);
-                            }
-                            String[] segments = bos.toString().split(del);
-                            for (String s : segments) {
-                                //Process messages using Single Thread
-                                TCPWorker worker=new TCPWorker(s,endpoint,socket);
-                                worker.run();
-                                //Process messages using Multiple Threads
-                                //workerPool.execute(new TCPWorker(s, endpoint, socket));
-                            }
-
+                        if ((char) next == delimiter && bos != null) {
+                            bos.flush();
+                            byte[] result = bos.toByteArray();
+                            //Process messages using Single Thread
+                            TCPWorker worker = new TCPWorker(result, endpoint, socket);
+                            worker.run();
+                            //Process messages using Multiple Threads
+                            //workerPool.execute(new TCPWorker(s, endpoint, socket));
+                            //bos.close();
+                            bos = null;
+                            next = input.read();
+                            continue;
+                        }
+                        if (bos == null) {
                             bos = new ByteArrayOutputStream();
-                            break;
-                            }
+                        }
+                        if ((char) next != delimiter) {
+                            bos.write(next);
+                        }
+                        next = input.read();
+                    }
+                    if (bos != null) {
+                        byte[] result = bos.toByteArray();
+                        //Process messages using Single Thread
+                        TCPWorker worker = new TCPWorker(result, endpoint, socket);
+                        worker.run();
+                        //Process messages using Multiple Threads
+                        //workerPool.execute(new TCPWorker(s, endpoint, socket));
+                        bos.close();
                     }
                 } catch (IOException e) {
-                    log.error("Error while reading the message from the server",e);
+                    log.error("Error while reading the message from the server", e);
                 } finally {
                     try {
-                        bos.close();
+                        if (input != null) {
+                            input.close();
+                        }
                     } catch (IOException e) {
-                        log.error("Error while closing the output stream",e);
                     }
                 }
-                socket.close();
-                socket = null;
             } catch (IOException e) {
-                log.error("Error while creating the socket connection",e);
+                log.error("Error while creating the socket connection", e);
+            } finally {
+                try {
+                    if (socket != null) {
+                        socket.close();
+                    }
+                } catch (IOException e) {
+                    //ignore
+                }
+                failover = true;
+                socket = null;
             }
-
         } while (socket == null);
     }
 }

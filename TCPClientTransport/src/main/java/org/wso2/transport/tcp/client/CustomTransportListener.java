@@ -9,23 +9,18 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 public class CustomTransportListener extends AbstractTransportListenerEx<TCPEndpoint> {
     private static final Log log = LogFactory.getLog(CustomTransportListener.class);
 
     private Map<TCPEndpoint, TCPClient> serverTable = new ConcurrentHashMap<TCPEndpoint, TCPClient>();
-
 
     protected void doInit() throws AxisFault {
 
     }
 
     protected TCPEndpoint createEndpoint() {
-
         return new TCPEndpoint();
     }
-
-
 
     protected void startEndpoint(TCPEndpoint endpoint) throws AxisFault {
         try {
@@ -39,7 +34,6 @@ public class CustomTransportListener extends AbstractTransportListenerEx<TCPEndp
 
     protected void stopEndpoint(TCPEndpoint endpoint) {
         try {
-
             TCPClient client = serverTable.get(endpoint);
             if (client != null) {
                 client.closeSocket();
@@ -51,5 +45,5 @@ public class CustomTransportListener extends AbstractTransportListenerEx<TCPEndp
         }
     }
 
-    }
+}
 
