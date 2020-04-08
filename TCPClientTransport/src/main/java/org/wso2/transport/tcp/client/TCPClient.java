@@ -32,6 +32,7 @@ public class TCPClient implements Runnable {
     }
 
     public void closeSocket() throws IOException {
+        running = false;
         log.info("TCP client stopping......");
         if (input != null) {
             try {
