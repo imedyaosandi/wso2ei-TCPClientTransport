@@ -1,8 +1,8 @@
 package org.wso2.transport.tcp.client;
 
 public class TCPConstants {
-    public static final String PARAM_PORT = "transport.tcpclient.port";
-    public static final String PARAM_HOST = "transport.tcpclient.hostname";
+    public static final String PARAM_PORT = "transport.tcpclient.server.port";
+    public static final String PARAM_HOST = "transport.tcpclient.server.hostname";
     public static final String PARAM_FAILOVER_PORT = "transport.tcpclient.failover.server.port";
     public static final String PARAM_FAILOVER_HOST = "transport.tcpclient.failover.server.hostname";
     public static final String PARAM_BACKLOG = "transport.tcpclient.backlog";
